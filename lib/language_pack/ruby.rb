@@ -609,7 +609,7 @@ ERROR
     log("bower") do
       topic("Installing JavaScript dependencies using bower #{BOWER_VERSION}")
 
-      load_bower_cache
+      # load_bower_cache
 
       pipe("./node_modules/bower/bin/bower install --config.storage.packages=vendor/bower/packages --config.storage.registry=vendor/bower/registry --config.tmp=vendor/bower/tmp 2>&1")
       if $?.success?
