@@ -16,7 +16,7 @@ class LanguagePack::Ruby < LanguagePack::Base
   LIBYAML_PATH         = "libyaml-#{LIBYAML_VERSION}"
   BUNDLER_VERSION      = "1.3.2"
   BUNDLER_GEM_PATH     = "bundler-#{BUNDLER_VERSION}"
-  #NODE_VERSION         = "0.4.7"
+  NODE_VERSION         = "0.10.20"
   NODE_JS_BINARY_PATH = "node"
   JVM_BASE_URL         = "http://heroku-jdk.s3.amazonaws.com"
   JVM_VERSION          = "openjdk7-latest"
@@ -538,7 +538,7 @@ WARNING
             end
           end
         end
-
+        
         if $?.success?
           puts "Bundle completed (#{"%.2f" % bundle_time}s)"
           log "bundle", :status => "success"
@@ -574,9 +574,9 @@ ERROR
     log("node") do
       bin_dir = "bin"
       FileUtils.mkdir_p bin_dir
-      run("curl http://heroku-buildpack-nodejs.s3.amazonaws.com/nodejs-0.10.3.tgz -s -o - | tar xzf -")
+      run("curl http://heroku-buildpack-nodejs.s3.amazonaws.com/nodejs-#{NODE_VERSION}.tgz -s -o - | tar xzf -")
       unless $?.success?
-        error "Can't install node-0.10.3"
+        error "Can't install node-#{NODE_VERSION}"
       end
       Dir["bin/*"].each {|path| run("chmod +x #{path}") }
     end
@@ -609,9 +609,17 @@ ERROR
     log("bower") do
       topic("Installing JavaScript dependencies using bower #{BOWER_VERSION}")
 
-      # load_bower_cache
+      if ENV['CLEAR_BOWER_CACHE'] == 'true'
+        puts 'Clearing the bower cache'
+        cache.clear "vendor/bower"
+        pipe "./node_modules/bower/bin/bower cache clean --config.storage.packages=vendor/bower/packages --config.storage.registry=vendor/bower/registry --config.tmp=vendor/bower/tmp 2>&1"
+      else
+        load_bower_cache
+      end
 
-      pipe("./node_modules/bower/bin/bower install")
+
+      pipe("./node_modules/bower/bin/bower install --config.storage.packages=vendor/bower/packages --config.storage.registry=vendor/bower/registry --config.tmp=vendor/bower/tmp 2>&1")
+
       if $?.success?
         log "bower", :status => "success"
         puts "Cleaning up the bower tmp."
